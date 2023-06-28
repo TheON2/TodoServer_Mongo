@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt')
-const {isNotLoggedIn} = require("./middlewares");
+const {isNotLoggedIn, isLoggedIn} = require("./middlewares");
 const passport = require("passport");
 
 module.exports = function(app, User)
@@ -54,9 +54,18 @@ module.exports = function(app, User)
           return next(loginErr);
         }
         const loginUser = await User.findOne({email: req.body.email});
-        return res.status(200).json(loginUser);
+        const userResponse = loginUser.toObject();
+        delete userResponse.password;
+        return res.status(200).json(userResponse);
       });
     })(req, res, next);
+  });
+
+  app.post("/user/logout", isLoggedIn, (req, res, next) => {
+    req.logout(() => {
+      req.session.destroy();
+      res.send("ok");
+    });
   });
 
   app.patch('/user/:email/done', async (req, res) => {
