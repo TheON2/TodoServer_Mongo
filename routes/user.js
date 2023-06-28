@@ -1,10 +1,17 @@
 const bcrypt = require('bcrypt')
 const {isNotLoggedIn, isLoggedIn} = require("./middlewares");
 const passport = require("passport");
+const jwt = require("jsonwebtoken");
+const auth = require("../jwt/auth");
 
 module.exports = function(app, User)
 {
   app.get('/user', async (req, res) => {
+    const user = await User.find({});
+    res.json(user);
+  });
+
+  app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
     const user = await User.find({});
     res.json(user);
   });
@@ -53,10 +60,14 @@ module.exports = function(app, User)
           console.log(err);
           return next(loginErr);
         }
-        const loginUser = await User.findOne({email: req.body.email});
-        const userResponse = loginUser.toObject();
+        const payload = {
+          email: user.email,
+          exp: Math.floor(Date.now() / 1000) + (60 * 10), //토큰 유효기간 10분
+        };
+        const token = jwt.sign(payload, process.env.JWT_SECRET);
+        const userResponse = user.toObject();
         delete userResponse.password;
-        return res.status(200).json(userResponse);
+        return res.status(200).json({ userResponse, token });
       });
     })(req, res, next);
   });

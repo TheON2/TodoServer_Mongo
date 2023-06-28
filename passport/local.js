@@ -4,6 +4,27 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user");
 
 module.exports = () => {
+  const JwtStrategy = require('passport-jwt').Strategy;
+  const ExtractJwt = require('passport-jwt').ExtractJwt;
+  const jwtOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: process.env.JWT_SECRET,
+  };
+
+  const jwtVerify = async (jwtPayload, done) => {
+    try {
+      const user = await User.findOne({ email: jwtPayload.email });
+      if (user) {
+        done(null, user);
+      } else {
+        done(null, false, { message: 'Invalid token' });
+      }
+    } catch (error) {
+      done(error, false);
+    }
+  };
+
+  passport.use('jwt', new JwtStrategy(jwtOptions, jwtVerify));
   passport.use(
     new LocalStrategy(
       {
