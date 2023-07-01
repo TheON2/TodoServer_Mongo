@@ -12,8 +12,16 @@ module.exports = function(app, User)
   });
 
   app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
-    const user = await User.find({});
-    res.json(user);
+    try {
+      const user = await User.findOne({ email: req.user.email });
+      if (!user) res.status(404).send("No user found");
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      console.log(userResponse)
+      return res.status(200).json({userResponse});
+    } catch (error) {
+      res.status(500).send(error);
+    }
   });
 
   app.get('/user/:email', async (req, res) => {
@@ -26,7 +34,7 @@ module.exports = function(app, User)
     }
   });
 
-  app.post('/user',isNotLoggedIn, async (req, res,next) => {
+  app.post('/user', async (req, res,next) => {
     try {
       const exUser = await User.findOne({email: req.body.email});
       if (exUser) {
@@ -46,7 +54,7 @@ module.exports = function(app, User)
   }
   });
 
-  app.post("/user/login", isNotLoggedIn, (req, res, next) => {
+  app.post("/user/login", (req, res, next) => {
     passport.authenticate('local', (err, user, info) => {
       if (err) {
         console.log(err);
@@ -62,9 +70,10 @@ module.exports = function(app, User)
         }
         const payload = {
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + (60 * 10), //토큰 유효기간 10분
+          exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 10분
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET);
+        res.cookie('token', token, { httpOnly: true, sameSite: 'Strict', secure: true });
         const userResponse = user.toObject();
         delete userResponse.password;
         return res.status(200).json({ userResponse, token });
@@ -72,7 +81,7 @@ module.exports = function(app, User)
     })(req, res, next);
   });
 
-  app.post("/user/logout", isLoggedIn, (req, res, next) => {
+  app.post("/user/logout", (req, res, next) => {
     req.logout(() => {
       req.session.destroy();
       res.send("ok");
