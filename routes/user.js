@@ -70,7 +70,7 @@ module.exports = function(app, User)
         }
         const payload = {
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 10분
+          exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 5분
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET);
         res.cookie('token', token, { httpOnly: true, sameSite: 'Strict', secure: true });
