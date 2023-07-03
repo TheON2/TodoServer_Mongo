@@ -12,13 +12,14 @@ const dotenv = require("dotenv");
 const Todo = require('./models/todo');
 const User = require('./models/user');
 const port = process.env.PORT || 3001;
+const origin = process.env.ORIGIN || 'https://todo-list-pi-wine.vercel.app';
 
 dotenv.config();
 passportConfig();
 
 app.use(morgan("dev"));
 app.use(cors({
-  origin:'https://todo-list-pi-wine.vercel.app',
+  origin:origin,
   credentials:true,
 }))
 app.use(bodyParser.urlencoded({extended: true}));
