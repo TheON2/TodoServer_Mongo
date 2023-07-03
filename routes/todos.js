@@ -69,7 +69,10 @@ module.exports = function(app, Todo)
       const doneTodos = await Todo.find({done: true})
         .skip(page * size)
         .limit(size);
-      res.json([...doneTodos]);
+      const Todos = await Todo.find({done: true})
+      console.log(Todo)
+
+      res.json({ todos:doneTodos, pageNum:Math.ceil(Todos.length/8)});
     } catch (err) {
       console.error(err);
       res.status(500).json({message: "Server error"});
