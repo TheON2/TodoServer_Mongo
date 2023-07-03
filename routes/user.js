@@ -87,7 +87,7 @@ module.exports = function(app, User)
     req.logout(() => {
       req.session.destroy();
       console.log(res.cookie)
-      res.cookie('token', '', { expires: new Date(0) });
+      res.cookie('token', '', { expires: new Date(0), httpOnly: true, sameSite: 'None', secure: true });
       console.log(res.cookie)
       res.send("ok");
     });

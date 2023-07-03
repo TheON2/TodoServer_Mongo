@@ -13,7 +13,7 @@ function auth(req, res, next) {
     req.user = decoded;
     next();
   } catch (ex) {
-    res.cookie('token', '', { expires: new Date(0) });
+    res.cookie('token', '', { expires: new Date(0), httpOnly: true, sameSite: 'None', secure: true });
     res.status(502).send('Invalid token.');
   }
 }
