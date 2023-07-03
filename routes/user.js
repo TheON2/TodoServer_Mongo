@@ -84,6 +84,7 @@ module.exports = function(app, User)
   app.post("/user/logout", (req, res, next) => {
     req.logout(() => {
       req.session.destroy();
+      res.cookie('token', '', { expires: new Date(0) });
       res.send("ok");
     });
   });
