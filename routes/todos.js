@@ -2,9 +2,11 @@ module.exports = function(app, Todo)
 {
     app.get('/todos', async (req, res) => {
         try {
+            const doneTodosCount = await Todo.countDocuments({done: false});
+            const notDoneTodosCount = await Todo.countDocuments({done: true});
             const doneTodos = await Todo.find({done: true}).limit(4);
             const notDoneTodos = await Todo.find({done: false}).limit(4);
-            res.json([...doneTodos, ...notDoneTodos]);
+            res.json({Todos:[...doneTodos, ...notDoneTodos],doneTodosCount,notDoneTodosCount});
         } catch (err) {
             console.error(err);
             res.status(500).json({message: "Server error"});
