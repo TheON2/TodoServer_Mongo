@@ -18,7 +18,7 @@ passportConfig();
 
 app.use(morgan("dev"));
 app.use(cors({
-  origin:'https://todo-list-pi-wine.vercel.app/',
+  origin:'https://todo-list-pi-wine.vercel.app',
   credentials:true,
 }))
 app.use(bodyParser.urlencoded({extended: true}));
