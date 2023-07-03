@@ -73,7 +73,7 @@ module.exports = function(app, User)
           exp: Math.floor(Date.now() / 1000) + (60 * 30), //토큰 유효기간 5분
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET);
-        res.cookie('token', token, { httpOnly: true, sameSite: 'Strict', secure: true });
+        res.cookie('token', token, { httpOnly: true, sameSite: 'None', secure: true });
         const userResponse = user.toObject();
         delete userResponse.password;
         return res.status(200).json({ userResponse, token });
