@@ -11,11 +11,14 @@ const session = require("express-session");
 const dotenv = require("dotenv");
 const Todo = require('./models/todo');
 const User = require('./models/user');
-const port = process.env.PORT || 3001;
-const origin = process.env.ORIGIN || 'https://todo-list-pi-wine.vercel.app';
 
 dotenv.config();
 passportConfig();
+
+const port = process.env.PORT || 3001;
+const origin = process.env.ORIGIN || 'https://todo-list-pi-wine.vercel.app';
+
+console.log(origin)
 
 app.use(morgan("dev"));
 app.use(cors({
