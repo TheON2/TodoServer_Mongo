@@ -3,10 +3,11 @@ const {isNotLoggedIn, isLoggedIn} = require("./middlewares");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const auth = require("../jwt/auth");
+const refreshauth = require("../jwt/refreshauth");
 
 module.exports = function(app, User)
 {
-  app.get('/user', async (req, res) => {
+  app.get('/user', auth, async (req, res) => {
     const user = await User.find({});
     res.json(user);
   });
@@ -17,14 +18,26 @@ module.exports = function(app, User)
       if (!user) res.status(404).send("No user found");
       const userResponse = user.toObject();
       delete userResponse.password;
-      console.log(userResponse)
       return res.status(200).json({userResponse});
     } catch (error) {
       res.status(500).send(error);
     }
   });
 
-  app.get('/user/:email', async (req, res) => {
+  app.get('/refreshToken',refreshauth, async (req, res) => { // auth 미들웨어 적용
+    try {
+      const payload = {
+        email: req.user.email,
+        exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 30분
+      };
+      const token = jwt.sign(payload, process.env.JWT_SECRET);
+      return res.status(200).json({token});
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  });
+
+  app.get('/user/:email', auth, async (req, res) => {
     try {
       const user = await User.findOne({ email: req.params.email });
       if (!user) res.status(404).send("No user found");
@@ -36,7 +49,7 @@ module.exports = function(app, User)
     }
   });
 
-  app.post('/user', async (req, res,next) => {
+  app.post('/user', auth, async (req, res,next) => {
     try {
       const exUser = await User.findOne({email: req.body.email});
       if (exUser) {
@@ -72,10 +85,15 @@ module.exports = function(app, User)
         }
         const payload = {
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + (60 * 30), //토큰 유효기간 5분
+          exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 30분
+        };
+        const refreshPayload = {
+          email: user.email,
+          exp: Math.floor(Date.now() / 1000) + (60 * 1 * 1 * 1), // Refresh token valid for 7 days
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET);
-        res.cookie('token', token, { httpOnly: true, sameSite: 'None', secure: true });
+        const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
         const userResponse = user.toObject();
         delete userResponse.password;
         return res.status(200).json({ userResponse, token });
@@ -86,14 +104,12 @@ module.exports = function(app, User)
   app.post("/user/logout", (req, res, next) => {
     req.logout(() => {
       req.session.destroy();
-      console.log(res.cookie)
-      res.cookie('token', '', { expires: new Date(0), httpOnly: true, sameSite: 'None', secure: true });
-      console.log(res.cookie)
+      res.cookie('refreshToken', '', { expires: new Date(0), httpOnly: true, sameSite: 'None', secure: true });
       res.send("ok");
     });
   });
 
-  app.patch('/user/:email/done', async (req, res) => {
+  app.patch('/user/:email/done', auth, async (req, res) => {
     try {
       let user = await User.findOne({ email: req.params.email });
       if (!user) {
@@ -107,7 +123,7 @@ module.exports = function(app, User)
     }
   });
 
-  app.patch('/user/:email/nickName', async (req, res) => {
+  app.patch('/user/:email/nickName', auth, async (req, res) => {
     try {
       let user = await User.findOne({ email: req.params.email });
       if (!user) {
@@ -121,7 +137,7 @@ module.exports = function(app, User)
     }
   });
 
-  app.delete('/user/:email', async (req, res) => {
+  app.delete('/user/:email', auth, async (req, res) => {
     try {
       let user = await User.findOneAndDelete({ email: req.params.email });
       if (!user) {
