@@ -4,9 +4,43 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const auth = require("../jwt/auth");
 const refreshauth = require("../jwt/refreshauth");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+try{
+  fs.accessSync('uploads'); // 업로드할 폴더 엑세스 시도
+}catch (err){
+  console.error('디폴트 폴더가 없으므로 생성');
+  fs.mkdirSync('uploads'); // 에러날시 업로드 폴더 생성
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req,file,done){
+      done(null, 'uploads');
+    },
+    filename(reg,file,done){
+      const ext = path.extname(file.originalname); // 확장자 추출(.jpeg)
+      const basename = path.basename(file.originalname , ext); // 파일이름 추출
+      done(null, basename + '_' + new Date().getTime() + ext); // 파일이름 파일생성시간 파일확장자
+    },
+  }),
+  limits: { fileSize: 20*20 *1024*1024} , // 20MB 파일용량제한
+})
 
 module.exports = function(app, User)
 {
+  app.post('/user/images', upload.array('image'), async (req, res, next) => {
+    try {
+      console.log(req.files);
+      res.json(req.files.map((v) => v.filename));
+    } catch (error) {
+      console.error(error);
+      res.status(600).send(error);
+    }
+  });
+
   app.get('/user', auth, async (req, res) => {
     const user = await User.find({});
     res.json(user);
@@ -28,7 +62,7 @@ module.exports = function(app, User)
     try {
       const payload = {
         email: req.user.email,
-        exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 30분
+        exp: Math.floor(Date.now() / 1000) + (60 * 30), //토큰 유효기간 30분
       };
       const token = jwt.sign(payload, process.env.JWT_SECRET);
       return res.status(200).json({token});
@@ -85,11 +119,11 @@ module.exports = function(app, User)
         }
         const payload = {
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + (10 * 1), //토큰 유효기간 30분
+          exp: Math.floor(Date.now() / 1000) + (60 * 30), //토큰 유효기간 30분
         };
         const refreshPayload = {
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + (60 * 1 * 1 * 1), // Refresh token valid for 7 days
+          exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET);
         const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);

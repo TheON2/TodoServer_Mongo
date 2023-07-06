@@ -11,6 +11,7 @@ const session = require("express-session");
 const dotenv = require("dotenv");
 const Todo = require('./models/todo');
 const User = require('./models/user');
+const path = require('path');
 
 dotenv.config();
 passportConfig();
@@ -25,6 +26,7 @@ app.use(cors({
   origin:origin,
   credentials:true,
 }))
+app.use('/',express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(cookieParser());
