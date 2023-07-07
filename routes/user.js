@@ -21,20 +21,28 @@ module.exports = function(app, User)
         return res.redirect(`${process.env.ORIGIN}/Login`);
       }
       try {
-        console.log('몽고유저 조회함 카카오:',user)
-        let mongoUser = await User.findOne({ email: user._json.kakao_account.email });
+        const email = user._json.kakao_account?.email;
+        const nickname = user._json.properties?.nickname;
+        const profileImage = user._json.properties?.thumbnail_image;
+
+        if (!email || !nickname || !profileImage) {
+          throw new Error("Invalid user profile information from Kakao");
+        }
+
+        let mongoUser = await User.findOne({ email });
+
         if (!mongoUser) {
           mongoUser = new User({
-            email: user._json.kakao_account.email,
-            nickName:user._json.properties.nickname,
-            password:user._json.kakao_account.email,
+            email,
+            nickName: nickname,
+            password: email,
             method:'kakao',
-            profileUrl:user._json.properties.thumbnail_image,
+            profileUrl: profileImage,
             profileContent:'카카오로 회원가입 하였습니다.',
           });
           await mongoUser.save();
         }
-        console.log('몽고유저 생성됨 카카오:',mongoUser)
+
         const refreshPayload = {
           email: mongoUser.email,
           exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
@@ -43,6 +51,7 @@ module.exports = function(app, User)
         res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
         return res.redirect(`${process.env.ORIGIN}/`);
       } catch (error) {
+        console.error(error);
         return res.redirect(`${process.env.ORIGIN}/Login`);
       }
     })(req, res, next);
