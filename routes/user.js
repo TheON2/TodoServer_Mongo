@@ -119,6 +119,7 @@ module.exports = function(app, User)
         };
         const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
         res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
+        console.log(`${process.env.ORIGIN}`);
         return res.redirect(`${process.env.ORIGIN}/`);
       } catch (error) {
         return res.redirect(`${process.env.ORIGIN}/Login`);
