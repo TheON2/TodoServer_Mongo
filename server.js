@@ -1,5 +1,6 @@
 let express = require('express');
 let app = express();
+app.enable('trust proxy');
 let bodyParser = require('body-parser');
 let mongoose = require('mongoose');
 let cors = require('cors')
