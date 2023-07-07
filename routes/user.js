@@ -96,9 +96,9 @@ module.exports = function(app, User)
       if (err) {
         return next(err);
       }
-      if (!user) {
-        return res.redirect(`${process.env.ORIGIN}/Login`);
-      }
+      // if (!user) {
+      //   return res.redirect(`${process.env.ORIGIN}/Login`);
+      // }
       try {
         console.log('몽고유저 조회함 구글:',user)
         let mongoUser = await User.findOne({ email: user.email });
@@ -119,7 +119,6 @@ module.exports = function(app, User)
         };
         const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
         res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
-        console.log(`오리진 조회중 : ${process.env.ORIGIN}`);
         return res.redirect(`${process.env.ORIGIN}/`);
       } catch (error) {
         return res.redirect(`${process.env.ORIGIN}/Login`);
