@@ -1,6 +1,5 @@
 let express = require('express');
 let app = express();
-app.enable('trust proxy');
 let bodyParser = require('body-parser');
 let mongoose = require('mongoose');
 let cors = require('cors')
@@ -18,7 +17,7 @@ dotenv.config();
 passportConfig();
 
 const port = process.env.PORT || 3001;
-const origin = process.env.ORIGIN || 'https://todo-list-pi-wine.vercel.app';
+const origin = 'https://todo-list-pi-wine.vercel.app';
 
 console.log(origin)
 
