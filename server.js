@@ -17,7 +17,7 @@ dotenv.config();
 passportConfig();
 
 const port = process.env.PORT || 3001;
-const origin = 'https://todo-list-pi-wine.vercel.app';
+const origin = process.env.ORIGIN || 'https://todo-list-pi-wine.vercel.app';
 
 console.log(origin)
 
