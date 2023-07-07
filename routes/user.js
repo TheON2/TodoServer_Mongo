@@ -21,28 +21,20 @@ module.exports = function(app, User)
         return res.redirect(`${process.env.ORIGIN}/Login`);
       }
       try {
-        const email = user._json.kakao_account?.email;
-        const nickname = user._json.properties?.nickname;
-        const profileImage = user._json.properties?.thumbnail_image;
-
-        if (!email || !nickname || !profileImage) {
-          throw new Error("Invalid user profile information from Kakao");
-        }
-
-        let mongoUser = await User.findOne({ email });
-
+        console.log('몽고유저 조회함 카카오:',user)
+        let mongoUser = await User.findOne({ email: user._json.kakao_account.email });
         if (!mongoUser) {
           mongoUser = new User({
-            email,
-            nickName: nickname,
-            password: email,
+            email: user._json.kakao_account.email,
+            nickName:user._json.properties.nickname,
+            password:user._json.kakao_account.email,
             method:'kakao',
-            profileUrl: profileImage,
+            profileUrl:user._json.properties.thumbnail_image,
             profileContent:'카카오로 회원가입 하였습니다.',
           });
           await mongoUser.save();
         }
-
+        console.log('몽고유저 생성됨 카카오:',mongoUser)
         const refreshPayload = {
           email: mongoUser.email,
           exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
@@ -51,7 +43,6 @@ module.exports = function(app, User)
         res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
         return res.redirect(`${process.env.ORIGIN}/`);
       } catch (error) {
-        console.error(error);
         return res.redirect(`${process.env.ORIGIN}/Login`);
       }
     })(req, res, next);
@@ -140,19 +131,19 @@ module.exports = function(app, User)
     res.json(user);
   });
 
-  app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
-    try {
-      const user = await User.findOne({ email: req.user.email });
-      console.log('액세스토큰',req.user.email)
-      if (!user) res.status(404).send("No user found");
-      const userResponse = user.toObject();
-      delete userResponse.password;
-      console.log(userResponse)
-      return res.status(200).json({userResponse});
-    } catch (error) {
-      res.status(500).send(error);
-    }
-  });
+  // app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
+  //   try {
+  //     const user = await User.findOne({ email: req.user.email });
+  //     console.log('액세스토큰',req.user.email)
+  //     if (!user) res.status(404).send("No user found");
+  //     const userResponse = user.toObject();
+  //     delete userResponse.password;
+  //     console.log(userResponse)
+  //     return res.status(200).json({userResponse});
+  //   } catch (error) {
+  //     res.status(500).send(error);
+  //   }
+  // });
 
   app.get('/refreshToken',refreshauth, async (req, res) => { // auth 미들웨어 적용
     try {
