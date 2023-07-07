@@ -6,10 +6,10 @@ dotenv.config();
 module.exports = function(app, Todo)
 {
     app.get('/todos', async (req, res) => {
-      const token = req.cookies.refreshToken
-      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-      req.user = decoded;
         try {
+          const token = req.cookies.refreshToken
+          const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+          req.user = decoded;
             const doneTodosCount = await Todo.countDocuments({writerEmail:req.user.email,done: false});
             const notDoneTodosCount = await Todo.countDocuments({writerEmail:req.user.email,done: true});
             const doneTodos = await Todo.find({writerEmail:req.user.email,done: true}).sort({ _id: -1 }).limit(4);
@@ -35,10 +35,10 @@ module.exports = function(app, Todo)
     });
 
     app.post('/todos/working/infinite', async (req, res) => {
-      const token = req.cookies.refreshToken
-      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-      req.user = decoded;
         try {
+          const token = req.cookies.refreshToken
+          const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+          req.user = decoded;
             const page = req.body.page;
             console.log(page)
             const size = 10; // 한 페이지당 로드될 아이템의 수
@@ -53,10 +53,10 @@ module.exports = function(app, Todo)
     });
 
     app.post('/todos/done/infinite', async (req, res) => {
-      const token = req.cookies.refreshToken
-      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-      req.user = decoded;
         try {
+          const token = req.cookies.refreshToken
+          const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+          req.user = decoded;
             const page = req.body.page;
             console.log(page)
             const size = 10; // 한 페이지당 로드될 아이템의 수
@@ -71,10 +71,10 @@ module.exports = function(app, Todo)
     });
 
   app.post('/todos/working/pagination', async (req, res) => {
-    const token = req.cookies.refreshToken
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    req.user = decoded;
     try {
+      const token = req.cookies.refreshToken
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      req.user = decoded;
       const page = req.body.page;
       console.log(page)
       const size = 8; // 한 페이지당 로드될 아이템의 수
@@ -92,10 +92,10 @@ module.exports = function(app, Todo)
   });
 
   app.post('/todos/done/pagination', async (req, res) => {
-    const token = req.cookies.refreshToken
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    req.user = decoded;
     try {
+      const token = req.cookies.refreshToken
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      req.user = decoded;
       const page = req.body.page;
       console.log(page)
       const size = 8; // 한 페이지당 로드될 아이템의 수
