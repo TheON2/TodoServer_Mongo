@@ -131,19 +131,19 @@ module.exports = function(app, User)
     res.json(user);
   });
 
-  // app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
-  //   try {
-  //     const user = await User.findOne({ email: req.user.email });
-  //     console.log('액세스토큰',req.user.email)
-  //     if (!user) res.status(404).send("No user found");
-  //     const userResponse = user.toObject();
-  //     delete userResponse.password;
-  //     console.log(userResponse)
-  //     return res.status(200).json({userResponse});
-  //   } catch (error) {
-  //     res.status(500).send(error);
-  //   }
-  // });
+  app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
+    try {
+      const user = await User.findOne({ email: req.user.email });
+      console.log('액세스토큰',req.user.email)
+      if (!user) res.status(404).send("No user found");
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      console.log(userResponse)
+      return res.status(200).json({userResponse});
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  });
 
   app.get('/refreshToken',refreshauth, async (req, res) => { // auth 미들웨어 적용
     try {
