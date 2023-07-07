@@ -5,7 +5,8 @@ const todoSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     content: { type: String, required: true },
-    done: { type: Boolean, default: false }
+    done: { type: Boolean, default: false },
+    writerEmail:{type: String, required: true},
   },
   {
     timestamps: true

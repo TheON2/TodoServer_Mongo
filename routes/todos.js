@@ -1,11 +1,19 @@
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
 module.exports = function(app, Todo)
 {
     app.get('/todos', async (req, res) => {
+      const token = req.cookies.refreshToken
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      req.user = decoded;
         try {
-            const doneTodosCount = await Todo.countDocuments({done: false});
-            const notDoneTodosCount = await Todo.countDocuments({done: true});
-            const doneTodos = await Todo.find({done: true}).sort({ _id: -1 }).limit(4);
-            const notDoneTodos = await Todo.find({done: false}).sort({ _id: -1 }).limit(4);
+            const doneTodosCount = await Todo.countDocuments({writerEmail:req.user.email,done: false});
+            const notDoneTodosCount = await Todo.countDocuments({writerEmail:req.user.email,done: true});
+            const doneTodos = await Todo.find({writerEmail:req.user.email,done: true}).sort({ _id: -1 }).limit(4);
+            const notDoneTodos = await Todo.find({writerEmail:req.user.email,done: false}).sort({ _id: -1 }).limit(4);
             res.json({Todos:[...doneTodos, ...notDoneTodos],doneTodosCount,notDoneTodosCount});
         } catch (err) {
             console.error(err);
@@ -27,11 +35,14 @@ module.exports = function(app, Todo)
     });
 
     app.post('/todos/working/infinite', async (req, res) => {
+      const token = req.cookies.refreshToken
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      req.user = decoded;
         try {
             const page = req.body.page;
             console.log(page)
             const size = 10; // 한 페이지당 로드될 아이템의 수
-            const workingTodos = await Todo.find({done: false})
+            const workingTodos = await Todo.find({writerEmail:req.user.email,done: false})
               .skip(page * size)
               .limit(size);
             res.json([...workingTodos]);
@@ -42,11 +53,14 @@ module.exports = function(app, Todo)
     });
 
     app.post('/todos/done/infinite', async (req, res) => {
+      const token = req.cookies.refreshToken
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      req.user = decoded;
         try {
             const page = req.body.page;
             console.log(page)
             const size = 10; // 한 페이지당 로드될 아이템의 수
-            const doneTodos = await Todo.find({done: true})
+            const doneTodos = await Todo.find({writerEmail:req.user.email,done: true})
               .skip(page * size)
               .limit(size);
             res.json([...doneTodos]);
@@ -57,14 +71,17 @@ module.exports = function(app, Todo)
     });
 
   app.post('/todos/working/pagination', async (req, res) => {
+    const token = req.cookies.refreshToken
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    req.user = decoded;
     try {
       const page = req.body.page;
       console.log(page)
       const size = 8; // 한 페이지당 로드될 아이템의 수
-      const workingTodos = await Todo.find({done: false})
+      const workingTodos = await Todo.find({writerEmail:req.user.email,done: false})
         .skip(page * size)
         .limit(size);
-      const Todos = await Todo.find({done: false})
+      const Todos = await Todo.find({writerEmail:req.user.email,done: false})
       console.log(Todo)
 
       res.json({ todos:workingTodos, pageNum:Math.ceil(Todos.length/8)});
@@ -75,14 +92,17 @@ module.exports = function(app, Todo)
   });
 
   app.post('/todos/done/pagination', async (req, res) => {
+    const token = req.cookies.refreshToken
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    req.user = decoded;
     try {
       const page = req.body.page;
       console.log(page)
       const size = 8; // 한 페이지당 로드될 아이템의 수
-      const doneTodos = await Todo.find({done: true})
+      const doneTodos = await Todo.find({writerEmail:req.user.email,done: true})
         .skip(page * size)
         .limit(size);
-      const Todos = await Todo.find({done: true})
+      const Todos = await Todo.find({writerEmail:req.user.email,done: true})
       console.log(Todo)
 
       res.json({ todos:doneTodos, pageNum:Math.ceil(Todos.length/8)});

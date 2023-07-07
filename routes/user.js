@@ -4,41 +4,126 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const auth = require("../jwt/auth");
 const refreshauth = require("../jwt/refreshauth");
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const dotenv = require("dotenv");
 
-try{
-  fs.accessSync('uploads'); // 업로드할 폴더 엑세스 시도
-}catch (err){
-  console.error('디폴트 폴더가 없으므로 생성');
-  fs.mkdirSync('uploads'); // 에러날시 업로드 폴더 생성
-}
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination(req,file,done){
-      done(null, 'uploads');
-    },
-    filename(reg,file,done){
-      const ext = path.extname(file.originalname); // 확장자 추출(.jpeg)
-      const basename = path.basename(file.originalname , ext); // 파일이름 추출
-      done(null, basename + '_' + new Date().getTime() + ext); // 파일이름 파일생성시간 파일확장자
-    },
-  }),
-  limits: { fileSize: 20*20 *1024*1024} , // 20MB 파일용량제한
-})
+dotenv.config();
 
 module.exports = function(app, User)
 {
-  app.post('/user/images', upload.array('image'), async (req, res, next) => {
-    try {
-      console.log(req.files);
-      res.json(req.files.map((v) => v.filename));
-    } catch (error) {
-      console.error(error);
-      res.status(600).send(error);
-    }
+  app.get('/user/kakao', passport.authenticate('kakao', { authType: 'reprompt' }));
+
+  app.get('/user/kakao/callback', function(req, res, next) {
+    passport.authenticate('kakao', async function(err, user, info) {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+      try {
+        console.log('몽고유저 조회함 카카오:',user)
+        let mongoUser = await User.findOne({ email: user._json.kakao_account.email });
+        if (!mongoUser) {
+          mongoUser = new User({
+            email: user._json.kakao_account.email,
+            nickName:user._json.properties.nickname,
+            password:user._json.kakao_account.email,
+            method:'kakao',
+            profileUrl:user._json.properties.thumbnail_image,
+            profileContent:'카카오로 회원가입 하였습니다.',
+          });
+          await mongoUser.save();
+        }
+        console.log('몽고유저 생성됨 카카오:',mongoUser)
+        const refreshPayload = {
+          email: mongoUser.email,
+          exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
+        };
+        const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
+        return res.redirect(`${process.env.ORIGIN}/`);
+      } catch (error) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+    })(req, res, next);
+  });
+
+  app.get('/user/naver', passport.authenticate('naver', { authType: 'reprompt' }));
+
+  app.get('/user/naver/callback', function(req, res, next) {
+    passport.authenticate('naver', async function(err, user, info) {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+      try {
+        console.log('몽고유저 조회함 네이버:',user)
+        let mongoUser = await User.findOne({ email: user.email });
+        if (!mongoUser) {
+          mongoUser = new User({
+            email: user.email,
+            nickName:user.nickname,
+            password:user.email,
+            method:'naver',
+            profileUrl:user.profileImage,
+            profileContent:'네이버로 회원가입 하였습니다.',
+          });
+          await mongoUser.save();
+        }
+        console.log('몽고유저 생성됨 네이버:',mongoUser)
+        const refreshPayload = {
+          email: mongoUser.email,
+          exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
+        };
+        const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
+        return res.redirect(`${process.env.ORIGIN}/`);
+      } catch (error) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+    })(req, res, next);
+  });
+  // google login 화면
+  app.get(
+    "/user/google",
+    passport.authenticate("google", { scope: ["email", "profile"] })
+  );
+
+  app.get('/user/google/callback', function(req, res, next) {
+    passport.authenticate('google', async function(err, user, info) {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+      try {
+        console.log('몽고유저 조회함 구글:',user)
+        let mongoUser = await User.findOne({ email: user.email });
+        if (!mongoUser) {
+          mongoUser = new User({
+            email: user.email,
+            nickName:user.displayName,
+            password:user.email,
+            method:'google',
+            profileUrl:user.picture,
+            profileContent:'구글로 회원가입 하였습니다.',
+          });
+          await mongoUser.save();
+        }
+        const refreshPayload = {
+          email: mongoUser.email,
+          exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 1), // Refresh token valid for 1 days
+        };
+        const refreshToken = jwt.sign(refreshPayload, process.env.JWT_REFRESH_SECRET);
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'None', secure: true });
+        return res.redirect(`${process.env.ORIGIN}/`);
+      } catch (error) {
+        return res.redirect(`${process.env.ORIGIN}/Login`);
+      }
+    })(req, res, next);
   });
 
   app.get('/user', auth, async (req, res) => {
@@ -49,9 +134,11 @@ module.exports = function(app, User)
   app.get('/usertoken', auth, async (req, res) => { // auth 미들웨어 적용
     try {
       const user = await User.findOne({ email: req.user.email });
+      console.log('액세스토큰',req.user.email)
       if (!user) res.status(404).send("No user found");
       const userResponse = user.toObject();
       delete userResponse.password;
+      console.log(userResponse)
       return res.status(200).json({userResponse});
     } catch (error) {
       res.status(500).send(error);
@@ -60,6 +147,7 @@ module.exports = function(app, User)
 
   app.get('/refreshToken',refreshauth, async (req, res) => { // auth 미들웨어 적용
     try {
+      console.log('리프레시토큰',req.user.email)
       const payload = {
         email: req.user.email,
         exp: Math.floor(Date.now() / 1000) + (60 * 30), //토큰 유효기간 30분
@@ -83,7 +171,7 @@ module.exports = function(app, User)
     }
   });
 
-  app.post('/user', auth, async (req, res,next) => {
+  app.post('/user', async (req, res,next) => {
     try {
       const exUser = await User.findOne({email: req.body.email});
       if (exUser) {
@@ -94,6 +182,9 @@ module.exports = function(app, User)
       email: req.body.email,
       nickName: req.body.nickName,
       password: hashedPassword,
+      method:'direct',
+      profileUrl:'https://avatars.githubusercontent.com/u/32028454?s=400&u=7993b49546f6ebb45968dbafa6c97c5789ec2254&v=4',
+      profileContent:'메인페이지로 회원가입 하였습니다.',
     })
     const savedUser = await user.save();
     res.json(savedUser);

@@ -8,10 +8,10 @@ const passportConfig = require("./passport");
 const passport = require("passport");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const dotenv = require("dotenv");
 const Todo = require('./models/todo');
 const User = require('./models/user');
 const path = require('path');
+const dotenv = require("dotenv");
 
 dotenv.config();
 passportConfig();
